@@ -8,6 +8,8 @@ import SearchField from "../components/SearchField/SearchField.jsx";
 
 const RestaurantView = () => {
   const [dishes, setDishes] = useState([]);
+  const [searchItem, setSearchItem] = useState("");
+
 
   // useDebouncedCallback takes a function as a parameter and as the second parameter
   // the number of milliseconds it should wait until it is actually called so a user
@@ -16,7 +18,7 @@ const RestaurantView = () => {
   const debouncedEffectHook = useDebouncedCallback(() => {
     let currentEffect = true;
     fetch(
-      `https://www.themealdb.com/api/json/v1/1/search.php?s=`
+      `https://www.themealdb.com/api/json/v1/1/search.php?s=${searchItem}`
     ).then(res => {
       if (!res.ok) {
         return { meals: null };
@@ -36,6 +38,8 @@ const RestaurantView = () => {
       setDishes([]);
     })
 
+    
+
     // This cleanup function is to prevent multiple API calls coming back out of sequence and setting the value of our dishes list.
     // Example:
     // 1. First search query is pizza -> Network request takes 5 seconds to fetch data
@@ -47,16 +51,32 @@ const RestaurantView = () => {
     }
   }, 500);
 
+  useEffect(() => {
+    fetch("https://www.themealdb.com/api/json/v1/1/search.php?s=")
+      .then(res => res.json())
+      .then(result => {
+        setDishes(result.meals ?? []);
+      })
+      .catch(() => {
+        setDishes([]);
+      });
+  }, []);
+
   // useEffect can take a variable that is a function and does not need to be defined as an anonymous () => {} arrow function
   // This is especially important when using more controlled techniques like debouncing
-  useEffect(debouncedEffectHook, [debouncedEffectHook]);
+  useEffect(() => {
+    if (searchItem.trim() === "") {
+      return;
+    }
+    debouncedEffectHook();
+  }, [searchItem, debouncedEffectHook]);
 
   return (
     <>
       <NavBar>
         <h1>ReDI React Restaurant</h1>
 
-        <SearchField />
+        <SearchField searchItem={searchItem} onSearch={setSearchItem} />
       </NavBar>
 
       <div className={styles.restaurantWrapper}>
